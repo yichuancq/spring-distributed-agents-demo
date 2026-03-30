@@ -32,6 +32,7 @@ public class MemoryService {
 
     /**
      * 保存记忆
+     *
      * @param request 记忆保存请求
      * @return 保存结果
      */
@@ -51,30 +52,21 @@ public class MemoryService {
             longTermMemory.computeIfAbsent(namespaceKey, k -> new ConcurrentHashMap<>());
             longTermMemory.get(namespaceKey).put(request.getKey(), memoryData);
 
-            logger.info("成功保存记忆: userId={}, context={}, key={}", 
-                    request.getUserId(), request.getContext(), request.getKey());
+            logger.info("成功保存记忆: userId={}, context={}, key={}", request.getUserId(), request.getContext(), request.getKey());
 
-            return MemoryResponse.builder()
-                    .success(true)
-                    .message("记忆保存成功")
-                    .namespace(namespace)
-                    .key(request.getKey())
-                    .data(memoryData)
-                    .build();
+            return MemoryResponse.builder().success(true).message("记忆保存成功").namespace(namespace).key(request.getKey()).data(memoryData).build();
         } catch (Exception e) {
             logger.error("保存记忆失败: {}", e.getMessage(), e);
-            return MemoryResponse.builder()
-                    .success(false)
-                    .message("保存失败: " + e.getMessage())
-                    .build();
+            return MemoryResponse.builder().success(false).message("保存失败: " + e.getMessage()).build();
         }
     }
 
     /**
      * 获取记忆
-     * @param userId 用户 ID
+     *
+     * @param userId  用户 ID
      * @param context 应用上下文
-     * @param key 记忆键
+     * @param key     记忆键
      * @return 记忆内容
      */
     public Optional<MemoryResponse> getMemory(String userId, String context, String key) {
@@ -87,13 +79,7 @@ public class MemoryService {
                 Map<String, Object> data = namespaceMemories.get(key);
                 logger.info("获取记忆: userId={}, context={}, key={}", userId, context, key);
 
-                return Optional.of(MemoryResponse.builder()
-                        .success(true)
-                        .message("获取成功")
-                        .namespace(namespace)
-                        .key(key)
-                        .data(data)
-                        .build());
+                return Optional.of(MemoryResponse.builder().success(true).message("获取成功").namespace(namespace).key(key).data(data).build());
             }
 
             return Optional.empty();
@@ -105,7 +91,8 @@ public class MemoryService {
 
     /**
      * 搜索记忆
-     * @param userId 用户 ID
+     *
+     * @param userId  用户 ID
      * @param context 应用上下文
      * @param filters 过滤条件
      * @return 匹配的记忆列表
@@ -130,18 +117,12 @@ public class MemoryService {
                         }
                     }
                     if (match) {
-                        results.add(MemoryResponse.builder()
-                                .success(true)
-                                .namespace(namespace)
-                                .key(entry.getKey())
-                                .data(entry.getValue())
-                                .build());
+                        results.add(MemoryResponse.builder().success(true).namespace(namespace).key(entry.getKey()).data(entry.getValue()).build());
                     }
                 }
             }
 
-            logger.info("搜索记忆: userId={}, context={}, filters={}, 找到 {} 条结果", 
-                    userId, context, filters, results.size());
+            logger.info("搜索记忆: userId={}, context={}, filters={}, 找到 {} 条结果", userId, context, filters, results.size());
         } catch (Exception e) {
             logger.error("搜索记忆失败: {}", e.getMessage(), e);
         }
@@ -150,6 +131,7 @@ public class MemoryService {
 
     /**
      * 获取用户偏好（从长期记忆中）
+     *
      * @param userId 用户 ID
      * @return 用户偏好字符串，用于注入到 Agent 提示词中
      */
@@ -158,14 +140,13 @@ public class MemoryService {
 
         try {
             List<String> contexts = Arrays.asList("chitchat", "preferences", "general");
-            
+
             for (String context : contexts) {
                 Optional<MemoryResponse> memoryOpt = getMemory(userId, context, "user_profile");
                 if (memoryOpt.isPresent()) {
                     MemoryResponse memory = memoryOpt.get();
                     if (memory.getData() != null && memory.getData().containsKey("rules")) {
-                        @SuppressWarnings("unchecked")
-                        List<String> rules = (List<String>) memory.getData().get("rules");
+                        @SuppressWarnings("unchecked") List<String> rules = (List<String>) memory.getData().get("rules");
                         if (rules != null && !rules.isEmpty()) {
                             sb.append("\n用户偏好设置：\n");
                             for (String rule : rules) {
@@ -184,9 +165,10 @@ public class MemoryService {
 
     /**
      * 保存对话历史（短期记忆）
+     *
      * @param sessionId 会话 ID
-     * @param role 角色（user/assistant）
-     * @param content 内容
+     * @param role      角色（user/assistant）
+     * @param content   内容
      */
     public void saveConversationHistory(String sessionId, String role, String content) {
         if (sessionId == null || sessionId.isBlank()) {
@@ -207,7 +189,8 @@ public class MemoryService {
 
     /**
      * 获取对话历史（短期记忆）
-     * @param sessionId 会话 ID
+     *
+     * @param sessionId   会话 ID
      * @param maxMessages 最大消息数
      * @return 对话历史列表
      */
@@ -217,7 +200,7 @@ public class MemoryService {
         }
 
         List<Map<String, String>> history = sessionHistory.getOrDefault(sessionId, new ArrayList<>());
-        
+
         if (history.size() > maxMessages) {
             return history.subList(history.size() - maxMessages, history.size());
         }
@@ -226,7 +209,8 @@ public class MemoryService {
 
     /**
      * 获取对话历史字符串，用于注入到 Agent 提示词中
-     * @param sessionId 会话 ID
+     *
+     * @param sessionId   会话 ID
      * @param maxMessages 最大消息数
      * @return 对话历史字符串
      */
@@ -246,6 +230,7 @@ public class MemoryService {
 
     /**
      * 清除会话记忆
+     *
      * @param sessionId 会话 ID
      */
     public void clearSessionMemory(String sessionId) {
@@ -255,7 +240,8 @@ public class MemoryService {
 
     /**
      * 学习用户偏好（自动分析对话并保存）
-     * @param userId 用户 ID
+     *
+     * @param userId      用户 ID
      * @param preferences 提取的偏好列表
      */
     public MemoryResponse learnUserPreferences(String userId, List<String> preferences) {
